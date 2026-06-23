@@ -1,58 +1,64 @@
 <?php
-require_once '../config.php';
+require_once __DIR__ . '/../config.php';
+requireAdminLogin();
 
-if(isset($_POST['login'])){
- $u=$_POST['username']; $p=$_POST['password'];
- $s=$pdo->prepare("SELECT * FROM admins WHERE username=?");
- $s->execute([$u]); $a=$s->fetch();
- if($a && password_verify($p,$a['password'])){
-   $_SESSION['admin']=1; header('Location: index.php'); exit;
- }
-}
-
-if(isset($_GET['logout'])){session_destroy(); header('Location:index.php'); exit;}
-
-if(!isset($_SESSION['admin'])){
+$activeFile = getActiveFile($pdo);
+$message = $_SESSION['flash_message'] ?? '';
+$error = $_SESSION['flash_error'] ?? '';
+unset($_SESSION['flash_message'], $_SESSION['flash_error']);
 ?>
-<form method="post" style="max-width:350px;margin:100px auto;font-family:sans-serif">
-<h2>AdminCP Login</h2>
-<input name="username" placeholder="Username"><br><br>
-<input type="password" name="password" placeholder="Password"><br><br>
-<button name="login">Login</button>
-</form>
-<?php exit; }
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>NovaTrade Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0">NovaTrade Admin Panel</h1>
+            <p class="text-muted mb-0">Manage the public download package.</p>
+        </div>
+        <div class="btn-group">
+            <a href="change-password.php" class="btn btn-outline-secondary">Change Password</a>
+            <a href="logout.php" class="btn btn-outline-danger">Logout</a>
+        </div>
+    </div>
 
-if(isset($_POST['upload']) && isset($_FILES['installer'])){
- move_uploaded_file($_FILES['installer']['tmp_name'],'../uploads/installer.exe');
-}
+    <?php if ($message): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($message) ?></div>
+    <?php endif; ?>
 
-$visits=$pdo->query("SELECT COUNT(*) FROM visits")->fetchColumn();
-$uvisits=$pdo->query("SELECT COUNT(DISTINCT ip) FROM visits")->fetchColumn();
-$downloads=$pdo->query("SELECT COUNT(*) FROM downloads")->fetchColumn();
-$udownloads=$pdo->query("SELECT COUNT(DISTINCT ip) FROM downloads")->fetchColumn();
-?>
-<!doctype html><html><body style="font-family:sans-serif;max-width:1000px;margin:auto">
-<h1>NovaTrade AdminCP</h1>
-<a href="?logout=1">Logout</a>
-<h3>Stats</h3>
-<ul>
-<li>Total Visits: <?= $visits ?></li>
-<li>Unique Visitors: <?= $uvisits ?></li>
-<li>Total Downloads: <?= $downloads ?></li>
-<li>Unique Downloaders: <?= $udownloads ?></li>
-</ul>
+    <?php if ($error): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($error) ?></div>
+    <?php endif; ?>
 
-<h3>Upload Installer</h3>
-<form method="post" enctype="multipart/form-data">
-<input type="file" name="installer">
-<button name="upload">Replace Installer</button>
-</form>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <h2 class="h5">Current Downloadable File</h2>
+            <?php if ($activeFile): ?>
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item"><strong>File:</strong> <?= htmlspecialchars($activeFile['original_name']) ?></li>
+                    <li class="list-group-item"><strong>Stored Name:</strong> <?= htmlspecialchars($activeFile['stored_name']) ?></li>
+                    <li class="list-group-item"><strong>Size:</strong> <?= formatBytes((int) $activeFile['size_bytes']) ?></li>
+                    <li class="list-group-item"><strong>Uploaded:</strong> <?= htmlspecialchars($activeFile['uploaded_at']) ?></li>
+                </ul>
+            <?php else: ?>
+                <div class="alert alert-warning mb-3">No downloadable file has been uploaded yet.</div>
+            <?php endif; ?>
 
-<h3>Recent Downloads</h3>
-<table border="1" cellpadding="5">
-<tr><th>IP</th><th>Date</th></tr>
-<?php foreach($pdo->query("SELECT * FROM downloads ORDER BY id DESC LIMIT 100") as $r){ ?>
-<tr><td><?=htmlspecialchars($r['ip'])?></td><td><?=$r['created_at']?></td></tr>
-<?php } ?>
-</table>
-</body></html>
+            <form action="upload.php" method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="installer" class="form-label">Replace the downloadable file</label>
+                    <input type="file" class="form-control" id="installer" name="installer" accept=".exe,.msi,.zip" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload & Replace</button>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>
