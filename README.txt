@@ -1,0 +1,1 @@
+Edit config.php with DB credentials. Import database.sql. Visit /admincp

@@ -1,0 +1,6 @@
+[23-Jun-2026 18:27:10 UTC] PHP Fatal error:  Uncaught PDOException: SQLSTATE[28000] [1045] Access denied for user 'DB_USER'@'localhost' (using password: YES) in /home/novatrad/novatradeai.pro/config.php:2
+Stack trace:
+#0 /home/novatrad/novatradeai.pro/config.php(2): PDO->__construct('mysql:host=loca...', 'DB_USER', 'DB_PASS')
+#1 /home/novatrad/novatradeai.pro/admincp/index.php(2): require_once('/home/novatrad/...')
+#2 {main}
+  thrown in /home/novatrad/novatradeai.pro/config.php on line 2
